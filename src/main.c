@@ -6,78 +6,117 @@
 #include "str_replace.h"
 #include "getenv.h"
 #include <string.h>
+#include "explode.h"
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-void type_prompt() {
+void type_prompt()
+{
     printf("xdauken $ ");
 }
 
-char *remove_space(char *str) {
-    int i = 0;
-    int j = 0;
-    while (str[i] != '\0') {
-        if (str[i] != ' ') {
-            str[j] = str[i];
-            j++;
-        }
-        i++;
-    }
-    str[j] = '\0';
-    return str;
-}
-
-bool file_exists(char *filename) {
+bool file_exists(char *filename)
+{
     FILE *file = fopen(filename, "r");
-    bool result = file!= NULL;
-    if (file != NULL) {
+    bool result = file != NULL;
+    if (file != NULL)
+    {
         fclose(file);
     }
 
-   return result;
+    return result;
 }
 
-char *get_command() {
-    char *user_input = remove_space(readline(stdin));
-    if (user_input == NULL) {
+char *get_command(char *user_input)
+{
+    if (user_input == NULL)
+    {
         return NULL;
     }
+    char *user_input_buffer = malloc(sizeof(char) * (strlen(user_input) + 1));
+    strcpy(user_input_buffer, user_input);
+    char *command_name = strtok(user_input_buffer, " ");
 
     char **env_arr = get_env_arr();
 
     char *command = NULL;
-    for (int i = 0; env_arr[i] != NULL; i++) {
-        if (command != NULL) {
+    for (int i = 0; env_arr[i] != NULL; i++)
+    {
+        if (command != NULL)
+        {
             free(command);
         }
-        size_t command_size = sizeof(char) * (strlen(env_arr[i]) + strlen(user_input) + 2);
+        size_t command_size = sizeof(char) * (strlen(env_arr[i]) + strlen(command_name) + 2);
         command = malloc(command_size);
         command = strcpy(command, env_arr[i]);
         command[strlen(env_arr[i])] = '/';
-        command = strcat(command, user_input);
+        command = strcat(command, command_name);
         command[command_size - 1] = '\0';
-        if (file_exists(command)) {
+
+        if (file_exists(command))
+        {
             free(env_arr);
-            free(user_input);
+            free(command_name);
             return command;
         }
     }
-    free(user_input);
     free(env_arr);
     free(command);
     return NULL;
 }
 
-int main(int argc, char *argv[]) {
+char **get_argv(char *user_input)
+{
+    return explode(user_input, ' ');
+}
+
+int main(int argc, char *argv[])
+{
     int status = EXIT_SUCCESS;
-    while (true) {
+
+    while (true)
+    {
         type_prompt();
-        char *command = get_command();
-        if (command == NULL) {
-            status = EXIT_FAILURE;
-            printf("command not found\n");
+        char *user_input = readline(stdin);
+        if (fork() != 0)
+        {
+            char exit[] = "exit";
+            if (strcmp(user_input, exit) == 0)
+            {
+                break;
+            }
+            wait(NULL);
+        }
+        else
+        {
+            if (user_input == NULL)
+            {
+                printf("\n");
+                break;
+            }
+
+            char *command = get_command(user_input);
+            char **user_argv = get_argv(user_input);
+
+            char exit[] = "exit";
+            if (strcmp(user_input, exit) == 0)
+            {
+                printf("Xaduken say goodby\n");
+                break;
+            }
+            if (command == NULL)
+            {
+                status = EXIT_FAILURE;
+                printf("command: %s not found\n", user_input);
+                free(user_input);
+                break;
+            }
+
+            execv(command, user_argv);
+            free(user_input);
             break;
         }
-        printf("command: %s\n", command);
-        break;
     }
 
     return status;
