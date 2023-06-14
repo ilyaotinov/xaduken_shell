@@ -79,12 +79,24 @@ int main(int argc, char *argv[])
     {
         type_prompt();
         char *user_input = readline(stdin);
+        char **user_argv = get_argv(user_input);
+        char cd[] = "cd";
+        char exit[] = "exit";
+
         if (fork() != 0)
         {
-            char exit[] = "exit";
             if (strcmp(user_input, exit) == 0)
             {
                 break;
+            }
+            if (strcmp(user_input, cd) == 0)
+            {
+                if (user_argv != NULL)
+                {
+                    chdir(user_argv[1]);
+                } else {
+                    printf("Error: No argument given\n");
+                }
             }
             wait(NULL);
         }
@@ -97,12 +109,14 @@ int main(int argc, char *argv[])
             }
 
             char *command = get_command(user_input);
-            char **user_argv = get_argv(user_input);
 
-            char exit[] = "exit";
             if (strcmp(user_input, exit) == 0)
             {
                 printf("Xaduken say goodby\n");
+                break;
+            }
+            if (strcmp(user_input, cd) == 0)
+            {
                 break;
             }
             if (command == NULL)
