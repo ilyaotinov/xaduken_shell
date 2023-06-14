@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
             }
             if (strcmp(user_input, cd) == 0)
             {
-                if (user_argv != NULL)
+                if (user_argv[1] != NULL)
                 {
                     chdir(user_argv[1]);
                 } else {
