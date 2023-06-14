@@ -1,7 +1,7 @@
+#include "readline.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "readline.h"
 
 char *readline(FILE *in)
 {
